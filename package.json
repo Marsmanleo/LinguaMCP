@@ -1,0 +1,49 @@
+{
+  "name": "@lingua/mcp",
+  "version": "0.1.0",
+  "description": "Open curriculum protocol for AI language tutors — learn naturally through daily practice with any AI tool",
+  "type": "module",
+  "main": "./src/index.ts",
+  "bin": {
+    "lingua-mcp": "server.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "init": "node scripts/init-sqlite.mjs",
+    "ingest": "npx tsx scripts/ingest-english-tips.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "tsx": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "mcp",
+    "language-learning",
+    "english",
+    "ai-tutor",
+    "supabase",
+    "sqlite",
+    "curriculum",
+    "daily-practice"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Marsmanleo/LinguaMCP.git"
+  },
+  "homepage": "https://github.com/Marsmanleo/LinguaMCP#readme",
+  "bugs": {
+    "url": "https://github.com/Marsmanleo/LinguaMCP/issues"
+  },
+  "author": "Mars Group"
+}
