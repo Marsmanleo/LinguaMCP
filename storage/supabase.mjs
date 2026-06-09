@@ -212,5 +212,46 @@ export function createSupabaseStorage(config) {
         })
       }
     },
+
+    async addLesson(chapterId, lesson) {
+      // Get next lesson number if not provided
+      let lessonNumber = lesson.lesson_number
+      if (!lessonNumber) {
+        const existing = await selectFrom(
+          "lessons",
+          `chapter_id=eq.${chapterId}&select=lesson_number&order=lesson_number.desc&limit=1`
+        )
+        lessonNumber = existing && existing.length > 0 ? existing[0].lesson_number + 1 : 1
+      }
+
+      const result = await insertInto("lessons", {
+        chapter_id: chapterId,
+        lesson_number: lessonNumber,
+        title: lesson.title,
+        content: lesson.content || "",
+        lesson_type: lesson.lesson_type || "concept",
+        difficulty: lesson.difficulty || "intermediate",
+        tags: lesson.tags || [],
+      })
+
+      return result[0].id
+    },
+
+    async addResource(lessonId, resource) {
+      const result = await insertInto("resources", {
+        lesson_id: lessonId,
+        title: resource.title,
+        url: resource.url,
+        type: resource.type || "article",
+        level: resource.level || "intermediate",
+        tags: resource.tags || [],
+      })
+
+      return result[0].id
+    },
+
+    async deprecateLesson(lessonId, _reason) {
+      await updateWhere("lessons", `id=eq.${lessonId}`, { status: "deprecated" })
+    },
   }
 }

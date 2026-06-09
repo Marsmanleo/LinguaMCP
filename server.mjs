@@ -42,7 +42,7 @@ const PORT = parseInt(process.env.LINGUA_MCP_PORT || "18800", 10);
 const SUPABASE_BASE_URL = process.env.SUPABASE_BASE_URL || "";
 const LINGUA_BACKEND = process.env.LINGUA_BACKEND || ""; // explicit: "sqlite" or "supabase"
 const MCP_PROTOCOL_VERSION = "2025-03-26";
-const SERVER_NAME = "@lingua/mcp";
+const SERVER_NAME = "lingua-mcp";
 const SERVER_VERSION = "0.1.0";
 
 // ============================================================
@@ -163,6 +163,62 @@ async function handleLogResponse(args) {
 }
 
 // ============================================================
+// Tool: add_lesson
+// ============================================================
+
+async function handleAddLesson(args) {
+  const chapterId = args.chapter_id;
+  if (!chapterId) return { ok: false, error: "chapter_id is required" };
+  if (!args.title) return { ok: false, error: "title is required" };
+  if (!args.content) return { ok: false, error: "content is required" };
+
+  const lesson = {
+    title: args.title,
+    content: args.content,
+    lesson_type: args.type || "concept",
+    difficulty: args.difficulty || "intermediate",
+    tags: args.tags || [],
+  };
+
+  const id = await storage.addLesson(chapterId, lesson);
+  return { ok: true, lesson_id: id, message: `Lesson "${args.title}" added` };
+}
+
+// ============================================================
+// Tool: add_resource
+// ============================================================
+
+async function handleAddResource(args) {
+  const lessonId = args.lesson_id;
+  if (!lessonId) return { ok: false, error: "lesson_id is required" };
+  if (!args.url) return { ok: false, error: "url is required" };
+  if (!args.title) return { ok: false, error: "title is required" };
+
+  const resource = {
+    title: args.title,
+    url: args.url,
+    type: args.type || "article",
+    level: args.level || "intermediate",
+    tags: args.tags || [],
+  };
+
+  const id = await storage.addResource(lessonId, resource);
+  return { ok: true, resource_id: id, message: `Resource "${args.title}" added` };
+}
+
+// ============================================================
+// Tool: remove_lesson
+// ============================================================
+
+async function handleRemoveLesson(args) {
+  const lessonId = args.lesson_id;
+  if (!lessonId) return { ok: false, error: "lesson_id is required" };
+
+  await storage.deprecateLesson(lessonId, args.reason || "No reason provided");
+  return { ok: true, lesson_id: lessonId, status: "deprecated" };
+}
+
+// ============================================================
 // Tool definitions
 // ============================================================
 
@@ -227,6 +283,105 @@ const TOOL_DEFINITIONS = [
       required: ["lesson_id"],
     },
   },
+  {
+    name: "add_lesson",
+    description:
+      "Add a new lesson to a chapter. Returns the new lesson ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        chapter_id: {
+          type: "string",
+          description: "UUID of the chapter to add the lesson to.",
+        },
+        title: {
+          type: "string",
+          description: "Lesson title.",
+        },
+        content: {
+          type: "string",
+          description: "Lesson content (markdown).",
+        },
+        type: {
+          type: "string",
+          description: "Lesson type: concept, tip, exercise, or dialogue.",
+          enum: ["concept", "tip", "exercise", "dialogue"],
+          default: "concept",
+        },
+        difficulty: {
+          type: "string",
+          description: "Difficulty level.",
+          enum: ["beginner", "intermediate", "advanced"],
+          default: "intermediate",
+        },
+        tags: {
+          type: "array",
+          items: { type: "string" },
+          description: "Tags for categorization.",
+        },
+      },
+      required: ["chapter_id", "title", "content"],
+    },
+  },
+  {
+    name: "add_resource",
+    description:
+      "Add an external resource (YouTube, article, podcast) linked to a lesson.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        lesson_id: {
+          type: "string",
+          description: "UUID of the lesson to link the resource to.",
+        },
+        title: {
+          type: "string",
+          description: "Resource title.",
+        },
+        url: {
+          type: "string",
+          description: "Resource URL.",
+        },
+        type: {
+          type: "string",
+          description: "Resource type.",
+          enum: ["youtube", "article", "podcast", "other"],
+          default: "article",
+        },
+        level: {
+          type: "string",
+          description: "Recommended difficulty level.",
+          enum: ["beginner", "intermediate", "advanced"],
+          default: "intermediate",
+        },
+        tags: {
+          type: "array",
+          items: { type: "string" },
+          description: "Tags for categorization.",
+        },
+      },
+      required: ["lesson_id", "title", "url"],
+    },
+  },
+  {
+    name: "remove_lesson",
+    description:
+      "Soft-delete a lesson (mark as deprecated). The lesson will no longer be served to any user.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        lesson_id: {
+          type: "string",
+          description: "UUID of the lesson to deprecate.",
+        },
+        reason: {
+          type: "string",
+          description: "Reason for deprecation.",
+        },
+      },
+      required: ["lesson_id"],
+    },
+  },
 ];
 
 // ============================================================
@@ -237,6 +392,9 @@ const TOOL_HANDLERS = {
   get_today_lesson: handleGetTodayLesson,
   get_user_progress: handleGetUserProgress,
   log_response: handleLogResponse,
+  add_lesson: handleAddLesson,
+  add_resource: handleAddResource,
+  remove_lesson: handleRemoveLesson,
 };
 
 async function callTool(name, args) {

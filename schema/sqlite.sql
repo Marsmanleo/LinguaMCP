@@ -55,8 +55,21 @@ CREATE TABLE IF NOT EXISTS daily_sessions (
   UNIQUE(user_id, session_date)
 );
 
+-- Resources table for external references (YouTube, articles, podcasts)
+CREATE TABLE IF NOT EXISTS resources (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  lesson_id TEXT REFERENCES lessons(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  url TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'article' CHECK (type IN ('youtube', 'article', 'podcast', 'other')),
+  level TEXT DEFAULT 'intermediate' CHECK (level IN ('beginner', 'intermediate', 'advanced')),
+  tags TEXT DEFAULT '[]',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_user_progress_user ON user_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_progress_lesson ON user_progress(lesson_id);
 CREATE INDEX IF NOT EXISTS idx_lessons_chapter ON lessons(chapter_id);
 CREATE INDEX IF NOT EXISTS idx_daily_sessions_user_date ON daily_sessions(user_id, session_date);
+CREATE INDEX IF NOT EXISTS idx_resources_lesson ON resources(lesson_id);

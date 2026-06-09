@@ -1,0 +1,25 @@
+# Dev / project management
+.github/
+CLAUDE.md
+CONTRIBUTING.md
+SECURITY.md
+TRADEMARK.md
+NOTICE
+
+# TypeScript config (not needed at runtime)
+tsconfig.json
+tsconfig.scripts.json
+
+# Build artifacts
+node_modules/
+
+# Docs (keep docs/ for self-hosting guide)
+# docs/ included
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/

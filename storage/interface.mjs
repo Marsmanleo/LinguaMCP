@@ -86,6 +86,30 @@ export const LinguaStorage = {
   async upsertProgress(userId, lessonId, status, response, score) { throw new Error("Not implemented") },
 
   /**
+   * Add a new lesson to a chapter.
+   * @param {string} chapterId
+   * @param {Object} lesson - { title, content, lesson_type, difficulty, tags, lesson_number? }
+   * @returns {Promise<string>} New lesson ID
+   */
+  async addLesson(chapterId, lesson) { throw new Error("Not implemented") },
+
+  /**
+   * Add an external resource linked to a lesson.
+   * @param {string} lessonId
+   * @param {Object} resource - { title, url, type, level, tags }
+   * @returns {Promise<string>} New resource ID
+   */
+  async addResource(lessonId, resource) { throw new Error("Not implemented") },
+
+  /**
+   * Soft-delete a lesson (mark as deprecated).
+   * @param {string} lessonId
+   * @param {string} reason
+   * @returns {Promise<void>}
+   */
+  async deprecateLesson(lessonId, reason) { throw new Error("Not implemented") },
+
+  /**
    * @returns {Promise<string>} Adapter name for logging (e.g. "sqlite", "supabase")
    */
   get name() { throw new Error("Not implemented") },

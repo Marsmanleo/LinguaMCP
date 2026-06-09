@@ -42,6 +42,35 @@ export function createSqliteStorage(config = {}) {
     console.log(`[LinguaMCP] SQLite schema initialized at ${dbPath}`)
   }
 
+  // ── Startup migrations ───────────────────────────────────
+  // Add status column to lessons if missing (soft delete support)
+  const lessonCols = db.prepare("PRAGMA table_info(lessons)").all()
+  if (!lessonCols.some(c => c.name === "status")) {
+    db.exec("ALTER TABLE lessons ADD COLUMN status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'deprecated'))")
+    console.log("[LinguaMCP] Migrated: added status column to lessons")
+  }
+
+  // Create resources table if missing
+  const resourceTableCheck = db.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='resources'"
+  ).get()
+  if (!resourceTableCheck) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS resources (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        lesson_id TEXT REFERENCES lessons(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'article' CHECK (type IN ('youtube', 'article', 'podcast', 'other')),
+        level TEXT DEFAULT 'intermediate' CHECK (level IN ('beginner', 'intermediate', 'advanced')),
+        tags TEXT DEFAULT '[]',
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_resources_lesson ON resources(lesson_id);
+    `)
+    console.log("[LinguaMCP] Migrated: created resources table")
+  }
+
   // ── Prepared statements ───────────────────────────────────
 
   const stmt = {
@@ -50,6 +79,7 @@ export function createSqliteStorage(config = {}) {
       FROM lessons l
       LEFT JOIN user_progress up ON up.lesson_id = l.id AND up.user_id = ?
       WHERE up.id IS NULL
+        AND (l.status = 'active' OR l.status IS NULL)
       ORDER BY l.chapter_id, l.lesson_number
       LIMIT 1
     `),
@@ -114,6 +144,26 @@ export function createSqliteStorage(config = {}) {
       UPDATE user_progress
       SET status = ?, response = ?, practiced_at = ?
       WHERE user_id = ? AND lesson_id = ?
+    `),
+
+    nextLessonNumber: db.prepare(`
+      SELECT COALESCE(MAX(lesson_number), 0) + 1 as next FROM lessons WHERE chapter_id = ?
+    `),
+
+    addLesson: db.prepare(`
+      INSERT INTO lessons (id, chapter_id, lesson_number, title, content, lesson_type, difficulty, tags)
+      VALUES (lower(hex(randomblob(16))), ?, ?, ?, ?, ?, ?, ?)
+      RETURNING id
+    `),
+
+    addResource: db.prepare(`
+      INSERT INTO resources (id, lesson_id, title, url, type, level, tags)
+      VALUES (lower(hex(randomblob(16))), ?, ?, ?, ?, ?, ?)
+      RETURNING id
+    `),
+
+    deprecateLesson: db.prepare(`
+      UPDATE lessons SET status = 'deprecated' WHERE id = ?
     `),
   }
 
@@ -220,6 +270,36 @@ export function createSqliteStorage(config = {}) {
           stmt.insertProgressNoScore.run(userId, lessonId, status, response)
         }
       }
+    },
+
+    async addLesson(chapterId, lesson) {
+      const lessonNumber = lesson.lesson_number || stmt.nextLessonNumber.get(chapterId).next
+      const result = stmt.addLesson.get(
+        chapterId,
+        lessonNumber,
+        lesson.title,
+        lesson.content || "",
+        lesson.lesson_type || "concept",
+        lesson.difficulty || "intermediate",
+        JSON.stringify(lesson.tags || [])
+      )
+      return result.id
+    },
+
+    async addResource(lessonId, resource) {
+      const result = stmt.addResource.get(
+        lessonId,
+        resource.title,
+        resource.url,
+        resource.type || "article",
+        resource.level || "intermediate",
+        JSON.stringify(resource.tags || [])
+      )
+      return result.id
+    },
+
+    async deprecateLesson(lessonId, _reason) {
+      stmt.deprecateLesson.run(lessonId)
     },
   }
 }
