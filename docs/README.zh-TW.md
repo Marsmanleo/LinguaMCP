@@ -1,3 +1,7 @@
+[English](../README.md) | **繁體中文（台灣）** | [繁體中文（香港）](README.zh-HK.md) | [简体中文](README.zh-CN.md)
+
+---
+
 # LinguaMCP
 
 > AI 語言教師的開放課程協定 — 透過每日練習，自然學習任何語言。
