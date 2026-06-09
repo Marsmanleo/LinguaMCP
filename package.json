@@ -1,7 +1,7 @@
 {
   "name": "lingua-mcp",
-  "version": "0.1.0",
-  "description": "Open curriculum protocol for AI language tutors — learn naturally through daily practice with any AI tool",
+  "version": "0.2.0",
+  "description": "Open curriculum protocol for AI language tutors \u2014 learn naturally through daily practice with any AI tool",
   "type": "module",
   "main": "./server.mjs",
   "types": "./src/index.ts",
