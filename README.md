@@ -1,5 +1,7 @@
 # LinguaMCP
 
+> [English](./README.md) | [繁體中文](./docs/README.zh-TW.md)
+
 > Open curriculum protocol for AI language tutors — learn naturally through daily practice with any AI tool.
 
 ## What is it?
