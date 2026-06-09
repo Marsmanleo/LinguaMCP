@@ -14,7 +14,7 @@ Instead of flashcards or grammar drills, you practice naturally through conversa
 
 ```bash
 # Install globally
-npm install -g @lingua/mcp
+npm install -g lingua-mcp
 
 # Initialize database with curriculum
 lingua-mcp-init
@@ -56,7 +56,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "lingua": {
       "command": "npx",
-      "args": ["-y", "@lingua/mcp"]
+      "args": ["-y", "lingua-mcp"]
     }
   }
 }
@@ -87,13 +87,55 @@ node server.mjs
 
 ## MCP Tools
 
-Once connected, your AI tool gets three new tools:
+Once connected, your AI tool gets **six tools** — three for practice and three for content curation:
+
+### Practice Tools
 
 | Tool | Description |
 |------|-------------|
 | `get_today_lesson` | Returns your next unmastered lesson with context and practice prompts |
 | `get_user_progress` | Shows mastery, practiced, and remaining counts |
 | `log_response` | Records your practice response (score 1-5, ≥4 = mastered) |
+
+### Curation Tools
+
+| Tool | Description |
+|------|-------------|
+| `add_lesson` | Add a new lesson to a chapter (title, content, type, difficulty, tags) |
+| `add_resource` | Link an external resource to a lesson (YouTube, article, podcast) |
+| `remove_lesson` | Soft-delete a lesson (marks as deprecated, excluded from serving) |
+
+#### Adding a lesson
+
+Your AI can add lessons from any source — YouTube channels, articles, or original content:
+
+```
+AI: "I found a great YouTube video about 'however' vs 'although'.
+     Should I add it as a lesson?"
+
+You: "Yes, add it to the Linking Words skill book"
+
+AI: → calls add_lesson with title, content, difficulty
+   ← "Lesson added successfully"
+```
+
+#### Curating resources
+
+Link external materials to any lesson for reference:
+
+```
+AI: → calls add_resource with lesson_id, url, type="youtube"
+   ← "Resource 'Emily Daily English EP1' added"
+```
+
+#### Removing low-quality lessons
+
+Mark lessons as deprecated without deleting data:
+
+```
+AI: → calls remove_lesson with lesson_id, reason="not useful"
+   ← "Lesson deprecated"
+```
 
 ## Curriculum
 
